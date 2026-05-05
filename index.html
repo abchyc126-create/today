@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
+    <title>我的现金抵扣券</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: #f5f5f5;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            color: #1f2f3a;
+            line-height: 1.4;
+        }
+
+        /* 整体容器 - 手机卡片风格 */
+        .app {
+            max-width: 450px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 0 10px rgba(0,0,0,0.02);
+        }
+
+        /* 状态栏 + 个人信息栏 完全参照原图无多余图标 */
+        .status-bar {
+            padding: 10px 16px 4px;
+            background: white;
+            font-size: 14px;
+            color: #111;
+            display: flex;
+            justify-content: space-between;
+            border-bottom: 0.5px solid #eee;
+        }
+
+        .profile-row {
+            padding: 12px 16px 8px;
+            background: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 0.5px solid #efefef;
+        }
+        .user-phone {
+            font-size: 17px;
+            font-weight: 500;
+        }
+        .edit-btn {
+            font-size: 13px;
+            color: #007aff;
+            background: #f0f0f0;
+            padding: 4px 12px;
+            border-radius: 20px;
+        }
+        .action-row {
+            display: flex;
+            gap: 12px;
+        }
+        .action-link {
+            font-size: 13px;
+            color: #007aff;
+            background: #f2f2f2;
+            padding: 4px 12px;
+            border-radius: 18px;
+        }
+
+        /* 菜单列表 - 无图标，仅文字+箭头，极简 */
+        .menu-list {
+            background: white;
+            margin-top: 8px;
+        }
+        .menu-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 16px;
+            border-bottom: 0.5px solid #f0f0f0;
+            background: white;
+            cursor: pointer;
+        }
+        .menu-label {
+            font-size: 16px;
+            color: #1f2f3a;
+        }
+        .arrow {
+            color: #c0c0c0;
+            font-size: 16px;
+        }
+
+        /* 现金抵扣券入口轻微底色，无图标 */
+        .coupon-entry {
+            background-color: #fffef7;
+        }
+
+        /* 底部导航 - 纯文字，无小图标 (满足“不要小图标”要求) */
+        .bottom-nav {
+            background: #ffffff;
+            border-top: 0.5px solid #e9e9e9;
+            display: flex;
+            justify-content: space-around;
+            padding: 10px 16px 12px;
+            margin-top: auto;
+        }
+        .nav-item {
+            font-size: 13px;
+            color: #8e8e93;
+            text-align: center;
+            letter-spacing: 0.3px;
+        }
+        .nav-item.active {
+            color: #007aff;
+            font-weight: 500;
+        }
+
+        /* 备案号 */
+        .icp {
+            text-align: center;
+            font-size: 10px;
+            color: #b0b0b0;
+            padding: 16px 0 12px;
+            background: #fafafc;
+        }
+
+        /* ========= 现金抵扣券详情页面 (三个tab) ========= */
+        .coupon-page {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #f8f8f8;
+            height: 100%;
+        }
+        .coupon-header {
+            background: white;
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            border-bottom: 0.5px solid #eee;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        .back-icon {
+            font-size: 24px;
+            cursor: pointer;
+            margin-right: 16px;
+            color: #007aff;
+            font-weight: 400;
+            line-height: 1;
+        }
+        .coupon-header h3 {
+            font-size: 18px;
+            font-weight: 500;
+        }
+
+        /* tab样式 - 简洁下划线 */
+        .tabs {
+            background: white;
+            display: flex;
+            border-bottom: 0.5px solid #eee;
+            padding: 0 12px;
+        }
+        .tab-item {
+            flex: 1;
+            text-align: center;
+            padding: 12px 0;
+            font-size: 15px;
+            color: #6c6c70;
+            font-weight: 400;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.1s ease;
+        }
+        .tab-item.active {
+            color: #007aff;
+            border-bottom: 2px solid #007aff;
+            font-weight: 500;
+        }
+
+        /* 券列表区域 */
+        .coupon-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 12px 12px 20px;
+        }
+
+        /* 券卡片 - 白色卡片无装饰图标 */
+        .coupon-card {
+            background: white;
+            border-radius: 0;
+            padding: 14px 16px;
+            margin-bottom: 10px;
+            border: 0.5px solid #e9e9ef;
+            box-shadow: none;
+        }
+        .coupon-name {
+            font-size: 16px;
+            font-weight: 500;
+            margin-bottom: 6px;
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+        }
+        .coupon-count-badge {
+            font-size: 13px;
+            color: #ff6b3d;
+            background: #fff1eb;
+            padding: 2px 8px;
+            border-radius: 12px;
+        }
+        .coupon-desc {
+            font-size: 12px;
+            color: #7c7c82;
+            margin-bottom: 8px;
+        }
+        .coupon-extra {
+            font-size: 12px;
+            color: #8e8e93;
+            display: flex;
+            justify-content: space-between;
+            margin-top: 6px;
+        }
+        .used-order {
+            font-size: 12px;
+            color: #666;
+            background: #f8f8fa;
+            padding: 6px 8px;
+            margin-top: 8px;
+            border-left: 2px solid #ddd;
+        }
+        .empty-tip {
+            text-align: center;
+            padding: 50px 20px;
+            color: #b0b0b0;
+            font-size: 14px;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .main-view {
+            flex: 1;
+        }
+    </style>
+</head>
+<body>
+<div class="app">
+    <!-- 状态栏 / 头部 完全参照原图 -->
+    <div class="status-bar">
+        <span>5:05</span>
+        <span>📶 🔋</span>
+    </div>
+    <div class="profile-row">
+        <div class="user-phone">189****2361</div>
+        <div class="action-row">
+            <span class="action-link">激活设备</span>
+            <span class="action-link">搜索附近设备</span>
+        </div>
+    </div>
+
+    <!-- 主内容区域：菜单视图 与 券详情视图切换 -->
+    <div class="main-view" id="mainView">
+        <!-- 默认显示功能列表页 (我的页面) -->
+        <div id="menuPage">
+            <div class="menu-list">
+                <div class="menu-item">
+                    <span class="menu-label">我的订单</span>
+                    <span class="arrow">›</span>
+                </div>
+                <div class="menu-item">
+                    <span class="menu-label">积分商城</span>
+                    <span class="arrow">›</span>
+                </div>
+                <div class="menu-item">
+                    <span class="menu-label">消息中心</span>
+                    <span class="arrow">›</span>
+                </div>
+                <div class="menu-item">
+                    <span class="menu-label">设备列表</span>
+                    <span class="arrow">›</span>
+                </div>
+                <div class="menu-item">
+                    <span class="menu-label">设备管理</span>
+                    <span class="arrow">›</span>
+                </div>
+                <div class="menu-item">
+                    <span class="menu-label">设备使用教程</span>
+                    <span class="arrow">›</span>
+                </div>
+                <div class="menu-item">
+                    <span class="menu-label">我的钱包</span>
+                    <span class="arrow">›</span>
+                </div>
+                <!-- 我的现金抵扣券入口 (核心新增) -->
+                <div class="menu-item coupon-entry" id="cashCouponBtn">
+                    <span class="menu-label" style="font-weight: 500;">我的现金抵扣券</span>
+                    <span class="arrow">›</span>
+                </div>
+                <div class="menu-item">
+                    <span class="menu-label">发票中心</span>
+                    <span class="arrow">›</span>
+                </div>
+                <div class="menu-item">
+                    <span class="menu-label">产品可用保障协议</span>
+                    <span class="arrow">›</span>
+                </div>
+                <div class="menu-item">
+                    <span class="menu-label">使用指南</span>
+                    <span class="arrow">›</span>
+                </div>
+            </div>
+            <div class="icp">
+                备案编号：粤ICP备18055359号-3X
+            </div>
+        </div>
+
+        <!-- 现金抵扣券详情页面 (三个tab：全部券 / 可使用券 / 已使用券) 初始隐藏 -->
+        <div id="couponPage" style="display: none; flex-direction: column; height: 100%;">
+            <div class="coupon-header">
+                <div class="back-icon" id="backToMenu">←</div>
+                <h3>我的现金抵扣券</h3>
+            </div>
+            <div class="tabs">
+                <div class="tab-item active" data-tab="all">全部券</div>
+                <div class="tab-item" data-tab="usable">可使用券</div>
+                <div class="tab-item" data-tab="used">已使用券</div>
+            </div>
+            <div class="coupon-list" id="couponListContainer">
+                <!-- 动态渲染专用 -->
+            </div>
+        </div>
+    </div>
+
+    <!-- 底部导航栏 无图标 纯文字 (还原简洁) -->
+    <div class="bottom-nav">
+        <span class="nav-item">商城</span>
+        <span class="nav-item">设备</span>
+        <span class="nav-item">门店</span>
+        <span class="nav-item active">我的</span>
+    </div>
+</div>
+
+<script>
+    // ======================= 专属券数据 =======================
+    // 根据用户提供的六种专属券生成 可使用券（未使用） + 已使用券（历史记录）
+    // 1. 重卡救星N1 166元现金抵扣券
+    // 2. 重卡救星P2E 88元现金抵扣券
+    // 3. CPI05充电逆变一体机 100元现金抵扣券
+    // 4. 卡儿酷定制酒 30元现金抵扣券
+    // 5. 平头哥毛绒玩具 10元现金抵扣券
+    // 6. 卡儿酷定制保温杯 6元现金抵扣券
+
+    // 可用券列表（可使用）：展示每种券剩余张数，以及适用条件/有效期
+    const usableCoupons = [
+        { 
+            id: "u1", 
+            name: "重卡救星N1 166元现金抵扣券", 
+            amount: 166,
+            remainCount: 3, 
+            condition: "购买重卡救星N1系列产品可用", 
+            expireDate: "2026-12-31",
+            discountDesc: "直减166元"
+        },
+        { 
+            id: "u2", 
+            name: "重卡救星P2E 88元现金抵扣券", 
+            amount: 88,
+            remainCount: 2, 
+            condition: "购买重卡救星P2E专用", 
+            expireDate: "2026-12-31",
+            discountDesc: "直减88元"
+        },
+        { 
+            id: "u3", 
+            name: "CPI05充电逆变一体机 100元现金抵扣券", 
+            amount: 100,
+            remainCount: 1, 
+            condition: "购买CPI05充电逆变一体机", 
+            expireDate: "2026-11-30",
+            discountDesc: "满1000减100元"
+        },
+        { 
+            id: "u4", 
+            name: "卡儿酷定制酒 30元现金抵扣券", 
+            amount: 30,
+            remainCount: 5, 
+            condition: "购买定制酒类专用", 
+            expireDate: "2026-10-15",
+            discountDesc: "直减30元"
+        },
+        { 
+            id: "u5", 
+            name: "平头哥毛绒玩具 10元现金抵扣券", 
+            amount: 10,
+            remainCount: 10, 
+            condition: "购买平头哥周边玩具", 
+            expireDate: "2027-01-01",
+            discountDesc: "无门槛抵10元"
+        },
+        { 
+            id: "u6", 
+            name: "卡儿酷定制保温杯 6元现金抵扣券", 
+            amount: 6,
+            remainCount: 8, 
+            condition: "购买定制保温杯可用", 
+            expireDate: "2026-09-30",
+            discountDesc: "直减6元"
+        }
+    ];
+
+    // 已使用券列表（展示历史核销记录，包含券名称、使用时间、订单号、抵扣金额、商品描述）
+    const usedCoupons = [
+        { id: "used1", name: "重卡救星N1 166元现金抵扣券", usedTime: "2026-04-15 14:23", orderNo: "ORD202604150001", usedAmount: "166元", product: "重卡救星N1应急电源" },
+        { id: "used2", name: "重卡救星N1 166元现金抵扣券", usedTime: "2026-03-20 09:47", orderNo: "ORD202603200822", usedAmount: "166元", product: "重卡救星N1豪华版" },
+        { id: "used3", name: "重卡救星P2E 88元现金抵扣券", usedTime: "2026-04-02 18:12", orderNo: "ORD202604021345", usedAmount: "88元", product: "重卡救星P2E启动电源" },
+        { id: "used4", name: "CPI05充电逆变一体机 100元现金抵扣券", usedTime: "2026-03-10 11:05", orderNo: "ORD202603100567", usedAmount: "100元", product: "CPI05充电逆变一体机" },
+        { id: "used5", name: "卡儿酷定制酒 30元现金抵扣券", usedTime: "2026-02-28 20:30", orderNo: "ORD202602281112", usedAmount: "30元", product: "卡儿酷定制白酒礼盒" },
+        { id: "used6", name: "平头哥毛绒玩具 10元现金抵扣券", usedTime: "2026-04-10 15:44", orderNo: "ORD202604102222", usedAmount: "10元", product: "平头哥毛绒公仔" },
+        { id: "used7", name: "卡儿酷定制保温杯 6元现金抵扣券", usedTime: "2026-04-05 10:20", orderNo: "ORD202604053334", usedAmount: "6元", product: "卡儿酷不锈钢保温杯" },
+        { id: "used8", name: "卡儿酷定制保温杯 6元现金抵扣券", usedTime: "2026-03-28 16:18", orderNo: "ORD202603284456", usedAmount: "6元", product: "卡儿酷运动保温杯" },
+        { id: "used9", name: "重卡救星P2E 88元现金抵扣券", usedTime: "2026-04-12 13:50", orderNo: "ORD202604127890", usedAmount: "88元", product: "重卡救星P2E智能版" }
+    ];
+
+    // 获取全部券（混合可使用 + 已使用），便于全部券tab展示
+    function getAllCouponsCombined() {
+        const usableList = usableCoupons.map(c => ({
+            type: 'usable',
+            id: c.id,
+            name: c.name,
+            remainCount: c.remainCount,
+            condition: c.condition,
+            expireDate: c.expireDate,
+            discountDesc: c.discountDesc,
+            amount: c.amount,
+            usedTime: null,
+            orderNo: null,
+            usedAmount: null,
+            product: null
+        }));
+        const usedList = usedCoupons.map(c => ({
+            type: 'used',
+            id: c.id,
+            name: c.name,
+            usedTime: c.usedTime,
+            orderNo: c.orderNo,
+            usedAmount: c.usedAmount,
+            product: c.product,
+            remainCount: null,
+            condition: null,
+            expireDate: null,
+            discountDesc: null
+        }));
+        return [...usableList, ...usedList];
+    }
+
+    // 辅助函数 - 防止XSS
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        });
+    }
+
+    // 渲染全部券
+    function renderAllCoupons() {
+        const allCoupons = getAllCouponsCombined();
+        if (allCoupons.length === 0) return '<div class="empty-tip">暂无券记录</div>';
+        let html = '';
+        for (let item of allCoupons) {
+            if (item.type === 'usable') {
+                html += `
+                    <div class="coupon-card">
+                        <div class="coupon-name">
+                            <span>${escapeHtml(item.name)}</span>
+                            <span class="coupon-count-badge">${item.remainCount}张</span>
+                        </div>
+                        <div class="coupon-desc">${escapeHtml(item.condition)} · ${escapeHtml(item.discountDesc)}</div>
+                        <div class="coupon-extra">
+                            <span>有效期至 ${item.expireDate}</span>
+                            <span style="color:#3a9b5e;">● 可使用</span>
+                        </div>
+                    </div>
+                `;
+            } else {
+                html += `
+                    <div class="coupon-card">
+                        <div class="coupon-name">
+                            <span>${escapeHtml(item.name)}</span>
+                            <span style="font-size:12px; color:#888;">已使用</span>
+                        </div>
+                        <div class="coupon-desc">抵扣金额: ${item.usedAmount} &nbsp;|&nbsp; 使用时间: ${item.usedTime}</div>
+                        <div class="used-order">
+                            订单号: ${item.orderNo}<br>
+                            商品: ${item.product}
+                        </div>
+                    </div>
+                `;
+            }
+        }
+        return html;
+    }
+
+    // 渲染可使用券 (展示有哪些券，对应券有多少张)
+    function renderUsableCoupons() {
+        if (usableCoupons.length === 0) return '<div class="empty-tip">暂无可使用现金券</div>';
+        let html = '';
+        for (let c of usableCoupons) {
+            html += `
+                <div class="coupon-card">
+                    <div class="coupon-name">
+                        <span>${escapeHtml(c.name)}</span>
+                        <span class="coupon-count-badge">${c.remainCount}张</span>
+                    </div>
+                    <div class="coupon-desc">${escapeHtml(c.condition)} · ${escapeHtml(c.discountDesc)}</div>
+                    <div class="coupon-extra">
+                        <span>有效期至 ${c.expireDate}</span>
+                        <span style="color:#3a9b5e;">剩余${c.remainCount}张</span>
+                    </div>
+                </div>
+            `;
+        }
+        return html;
+    }
+
+    // 渲染已使用券 (展示所有已使用券详情)
+    function renderUsedCoupons() {
+        if (usedCoupons.length === 0) return '<div class="empty-tip">暂无已使用券记录</div>';
+        let html = '';
+        for (let u of usedCoupons) {
+            html += `
+                <div class="coupon-card">
+                    <div class="coupon-name">
+                        <span>${escapeHtml(u.name)}</span>
+                        <span style="font-size:12px; color:#8e8e93;">已核销</span>
+                    </div>
+                    <div class="coupon-desc">抵扣金额: ${u.usedAmount} &nbsp; 使用时间: ${u.usedTime}</div>
+                    <div class="used-order">
+                        订单号: ${u.orderNo}<br>
+                        购买商品: ${u.product}
+                    </div>
+                </div>
+            `;
+        }
+        return html;
+    }
+
+    // tab逻辑
+    let currentTab = 'all'; 
+
+    function switchTab(tabId) {
+        currentTab = tabId;
+        // 更新tab样式
+        document.querySelectorAll('.tab-item').forEach(tab => {
+            const tabValue = tab.getAttribute('data-tab');
+            if (tabValue === tabId) {
+                tab.classList.add('active');
+            } else {
+                tab.classList.remove('active');
+            }
+        });
+        const container = document.getElementById('couponListContainer');
+        if (!container) return;
+        let html = '';
+        if (tabId === 'all') {
+            html = renderAllCoupons();
+        } else if (tabId === 'usable') {
+            html = renderUsableCoupons();
+        } else if (tabId === 'used') {
+            html = renderUsedCoupons();
+        }
+        container.innerHTML = html;
+    }
+
+    // 显示券页面
+    function showCouponPage() {
+        document.getElementById('menuPage').style.display = 'none';
+        const couponPageDiv = document.getElementById('couponPage');
+        couponPageDiv.style.display = 'flex';
+        switchTab('all');   // 默认进入全部券
+    }
+
+    // 返回菜单页面
+    function showMenuPage() {
+        document.getElementById('menuPage').style.display = 'block';
+        document.getElementById('couponPage').style.display = 'none';
+    }
+
+    // 绑定事件
+    function bindEvents() {
+        const entryBtn = document.getElementById('cashCouponBtn');
+        if (entryBtn) {
+            entryBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                showCouponPage();
+            });
+        }
+        const backBtn = document.getElementById('backToMenu');
+        if (backBtn) {
+            backBtn.addEventListener('click', () => {
+                showMenuPage();
+            });
+        }
+        // tab切换事件
+        const tabs = document.querySelectorAll('.tab-item');
+        tabs.forEach(tab => {
+            tab.addEventListener('click', (e) => {
+                const tabValue = tab.getAttribute('data-tab');
+                if (tabValue) switchTab(tabValue);
+            });
+        });
+
+        // 其他菜单项点击给出轻提示（避免用户困惑，同时不影响核心券功能演示）
+        const otherItems = document.querySelectorAll('.menu-item:not(#cashCouponBtn)');
+        otherItems.forEach(item => {
+            item.addEventListener('click', (e) => {
+                const labelSpan = item.querySelector('.menu-label');
+                const label = labelSpan ? labelSpan.innerText : '功能';
+                const toast = document.createElement('div');
+                toast.innerText = `“${label}” 示例页面，请体验「我的现金抵扣券」完整功能`;
+                toast.style.position = 'fixed';
+                toast.style.bottom = '70px';
+                toast.style.left = '50%';
+                toast.style.transform = 'translateX(-50%)';
+                toast.style.backgroundColor = 'rgba(0,0,0,0.7)';
+                toast.style.color = '#fff';
+                toast.style.padding = '6px 16px';
+                toast.style.borderRadius = '30px';
+                toast.style.fontSize = '12px';
+                toast.style.zIndex = '999';
+                toast.style.whiteSpace = 'nowrap';
+                document.body.appendChild(toast);
+                setTimeout(() => toast.remove(), 1500);
+            });
+        });
+    }
+
+    // 初始化
+    function init() {
+        bindEvents();
+        showMenuPage();  // 默认显示菜单
+    }
+
+    init();
+</script>
+</body>
+</html>
